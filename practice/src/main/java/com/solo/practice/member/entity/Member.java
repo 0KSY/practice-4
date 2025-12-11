@@ -1,10 +1,13 @@
 package com.solo.practice.member.entity;
 
+import com.solo.practice.posting.entity.Posting;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -21,4 +24,7 @@ public class Member {
 
     @Column(nullable = false, unique = true)
     private String nickname;
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE)
+    private List<Posting> postings = new ArrayList<>();
 }
