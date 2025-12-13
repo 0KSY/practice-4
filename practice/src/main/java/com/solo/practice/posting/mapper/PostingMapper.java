@@ -1,5 +1,6 @@
 package com.solo.practice.posting.mapper;
 
+import com.solo.practice.comment.dto.CommentDto;
 import com.solo.practice.member.dto.MemberDto;
 import com.solo.practice.member.entity.Member;
 import com.solo.practice.posting.dto.PostingDto;
@@ -7,6 +8,7 @@ import com.solo.practice.posting.entity.Posting;
 import org.mapstruct.Mapper;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface PostingMapper {
@@ -43,6 +45,39 @@ public interface PostingMapper {
                         .build()
                 ).build();
 
+
+        List<CommentDto.ParentCommentResponse> parentCommentResponses
+                = posting.getComments().stream()
+                .filter(comment -> comment.getParentComment() == null)
+                .map(comment -> CommentDto.ParentCommentResponse.builder()
+                        .commentId(comment.getCommentId())
+                        .content(comment.getContent())
+                        .createdAt(comment.getCreatedAt())
+                        .modifiedAt(comment.getModifiedAt())
+                        .memberResponse(MemberDto.MemberResponse.builder()
+                                .memberId(comment.getMember().getMemberId())
+                                .email(comment.getMember().getEmail())
+                                .nickname(comment.getMember().getNickname())
+                                .build())
+                        .childCommentResponses(comment.getChildComments().stream()
+                                .map(childComment -> CommentDto.ChildCommentResponse.builder()
+                                        .commentId(childComment.getCommentId())
+                                        .parentCommentId(childComment.getParentComment().getCommentId())
+                                        .content(childComment.getContent())
+                                        .createdAt(childComment.getCreatedAt())
+                                        .modifiedAt(childComment.getModifiedAt())
+                                        .memberResponse(MemberDto.MemberResponse.builder()
+                                                .memberId(childComment.getMember().getMemberId())
+                                                .email(childComment.getMember().getEmail())
+                                                .nickname(childComment.getMember().getNickname())
+                                                .build()
+                                        ).build()
+                                ).collect(Collectors.toList())
+                        ).build()
+                ).collect(Collectors.toList());
+
+        response.setParentCommentResponses(parentCommentResponses);
+
         return response;
     }
 
@@ -60,6 +95,19 @@ public interface PostingMapper {
                         .nickname(posting.getMember().getNickname())
                         .build()
                 ).build();
+
+
+        int parentCommentCount = (int) posting.getComments().stream()
+                .filter(comment -> comment.getParentComment() == null)
+                .count();
+
+        int childCommentCount = posting.getComments().stream()
+                .filter(comment -> comment.getParentComment() == null)
+                .mapToInt(comment -> comment.getChildComments().size())
+                .sum();
+
+        response.setCommentCount(parentCommentCount + childCommentCount);
+
 
         return response;
     }
