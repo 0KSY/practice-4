@@ -2,10 +2,13 @@ package com.solo.practice.posting.dto;
 
 import com.solo.practice.comment.dto.CommentDto;
 import com.solo.practice.member.dto.MemberDto;
+import com.solo.practice.postingTag.dto.PostingTagDto;
+import com.solo.practice.tag.dto.TagDto;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
 import java.time.LocalDateTime;
@@ -22,6 +25,9 @@ public class PostingDto {
         private String title;
         @NotBlank
         private String content;
+
+        @Valid
+        private List<PostingTagDto> postingTagDtos;
     }
 
     @Getter
@@ -30,6 +36,9 @@ public class PostingDto {
         private long postingId;
         private String title;
         private String content;
+
+        @Valid
+        private List<PostingTagDto> postingTagDtos;
     }
 
     @Getter
@@ -43,6 +52,7 @@ public class PostingDto {
         private LocalDateTime createdAt;
         private LocalDateTime modifiedAt;
         private MemberDto.MemberResponse memberResponse;
+        private List<TagDto.TagResponse> tagResponses;
         private List<CommentDto.ParentCommentResponse> parentCommentResponses;
     }
 

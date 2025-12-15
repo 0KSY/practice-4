@@ -5,6 +5,9 @@ import com.solo.practice.member.dto.MemberDto;
 import com.solo.practice.member.entity.Member;
 import com.solo.practice.posting.dto.PostingDto;
 import com.solo.practice.posting.entity.Posting;
+import com.solo.practice.postingTag.entity.PostingTag;
+import com.solo.practice.tag.dto.TagDto;
+import com.solo.practice.tag.entity.Tag;
 import org.mapstruct.Mapper;
 
 import java.util.List;
@@ -24,10 +27,60 @@ public interface PostingMapper {
         posting.setViewCount(0);
         posting.setMember(member);
 
+        if(postingPostDto.getPostingTagDtos() != null){
+
+            List<PostingTag> postingTags = postingPostDto.getPostingTagDtos().stream()
+                    .map(postingTagDto -> {
+
+                        Tag tag = new Tag();
+                        tag.setTagName(postingTagDto.getTagName());
+
+                        PostingTag postingTag = new PostingTag();
+                        postingTag.setPosting(posting);
+                        postingTag.setTag(tag);
+
+                        return postingTag;
+                    }).collect(Collectors.toList());
+
+            posting.setPostingTags(postingTags);
+        }
+
         return posting;
     }
 
-    Posting postingPatchDtoToPosting(PostingDto.Patch postingPatchDto);
+    default Posting postingPatchDtoToPosting(PostingDto.Patch postingPatchDto){
+
+        Posting posting = new Posting();
+        posting.setPostingId(postingPatchDto.getPostingId());
+
+        if(postingPatchDto.getTitle() != null){
+            posting.setTitle(postingPatchDto.getTitle());
+        }
+
+        if(postingPatchDto.getContent() != null){
+            posting.setContent(postingPatchDto.getContent());
+        }
+
+        if(postingPatchDto.getPostingTagDtos() != null){
+
+            List<PostingTag> postingTags = postingPatchDto.getPostingTagDtos().stream()
+                    .map(postingTagDto -> {
+
+                        Tag tag = new Tag();
+                        tag.setTagName(postingTagDto.getTagName());
+
+                        PostingTag postingTag = new PostingTag();
+                        postingTag.setPosting(posting);
+                        postingTag.setTag(tag);
+
+                        return postingTag;
+                    }).collect(Collectors.toList());
+
+            posting.setPostingTags(postingTags);
+        }
+
+        return posting;
+    }
 
     default PostingDto.Response postingToPostingResponseDto(Posting posting){
 
@@ -44,6 +97,16 @@ public interface PostingMapper {
                         .nickname(posting.getMember().getNickname())
                         .build()
                 ).build();
+
+
+        List<TagDto.TagResponse> tagResponses = posting.getPostingTags().stream()
+                .map(postingTag -> TagDto.TagResponse.builder()
+                        .tagId(postingTag.getTag().getTagId())
+                        .tagName(postingTag.getTag().getTagName())
+                        .build()
+                ).collect(Collectors.toList());
+
+        response.setTagResponses(tagResponses);
 
 
         List<CommentDto.ParentCommentResponse> parentCommentResponses
