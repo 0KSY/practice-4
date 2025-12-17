@@ -2,6 +2,7 @@ package com.solo.practice.member.entity;
 
 import com.solo.practice.comment.entity.Comment;
 import com.solo.practice.posting.entity.Posting;
+import com.solo.practice.postingLike.entity.PostingLike;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,4 +32,7 @@ public class Member {
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE)
     private List<Comment> comments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE)
+    private List<PostingLike> postingLikes = new ArrayList<>();
 }
