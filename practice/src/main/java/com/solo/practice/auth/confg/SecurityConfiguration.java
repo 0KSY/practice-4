@@ -1,9 +1,15 @@
 package com.solo.practice.auth.confg;
 
+import com.solo.practice.auth.filter.JwtAuthenticationFilter;
+import com.solo.practice.auth.handler.CustomAuthenticationFailureHandler;
+import com.solo.practice.auth.handler.CustomAuthenticationSuccessHandler;
+import com.solo.practice.auth.jwt.JwtTokenizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +23,12 @@ import java.util.Arrays;
 @Configuration
 public class SecurityConfiguration {
 
+    private final JwtTokenizer jwtTokenizer;
+
+    public SecurityConfiguration(JwtTokenizer jwtTokenizer) {
+        this.jwtTokenizer = jwtTokenizer;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
 
@@ -29,11 +41,30 @@ public class SecurityConfiguration {
                 .and()
                 .formLogin().disable()
                 .httpBasic().disable()
+                .apply(new CustomFilterConfigurer())
+                .and()
                 .authorizeHttpRequests(authorize -> authorize
                         .anyRequest().permitAll()
                 );
 
         return http.build();
+    }
+
+    public class CustomFilterConfigurer extends AbstractHttpConfigurer<CustomFilterConfigurer, HttpSecurity> {
+        @Override
+        public void configure(HttpSecurity builder) throws Exception {
+
+            AuthenticationManager authenticationManager = builder.getSharedObject(AuthenticationManager.class);
+
+            JwtAuthenticationFilter jwtAuthenticationFilter
+                    = new JwtAuthenticationFilter(authenticationManager, jwtTokenizer);
+
+            jwtAuthenticationFilter.setFilterProcessesUrl("/auth/login");
+            jwtAuthenticationFilter.setAuthenticationSuccessHandler(new CustomAuthenticationSuccessHandler());
+            jwtAuthenticationFilter.setAuthenticationFailureHandler(new CustomAuthenticationFailureHandler());
+
+            builder.addFilter(jwtAuthenticationFilter);
+        }
     }
 
     @Bean
