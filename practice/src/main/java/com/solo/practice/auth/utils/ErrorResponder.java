@@ -27,4 +27,22 @@ public class ErrorResponder {
 
         common(response, httpStatus, errorResponse);
     }
+
+    public static void sendJwtSignatureErrorResponse(HttpServletResponse response, HttpStatus httpStatus) throws IOException{
+
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setStatusAndMessageFromHttpStatusAndMessage(
+                httpStatus, "Signature of accessToken is not valid");
+
+        common(response, httpStatus, errorResponse);
+    }
+
+    public static void sendExpiredJwtErrorResponse(HttpServletResponse response, HttpStatus httpStatus) throws IOException{
+
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setStatusAndMessageFromHttpStatusAndMessage(
+                httpStatus, "AccessToken expired");
+
+        common(response, httpStatus, errorResponse);
+    }
 }

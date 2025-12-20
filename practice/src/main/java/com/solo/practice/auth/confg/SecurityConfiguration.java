@@ -1,11 +1,16 @@
 package com.solo.practice.auth.confg;
 
 import com.solo.practice.auth.filter.JwtAuthenticationFilter;
+import com.solo.practice.auth.filter.JwtVerificationFilter;
+import com.solo.practice.auth.handler.CustomAccessDeniedHandler;
+import com.solo.practice.auth.handler.CustomAuthenticationEntryPoint;
 import com.solo.practice.auth.handler.CustomAuthenticationFailureHandler;
 import com.solo.practice.auth.handler.CustomAuthenticationSuccessHandler;
 import com.solo.practice.auth.jwt.JwtTokenizer;
+import com.solo.practice.auth.utils.CustomAuthorityUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -24,9 +29,11 @@ import java.util.Arrays;
 public class SecurityConfiguration {
 
     private final JwtTokenizer jwtTokenizer;
+    private final CustomAuthorityUtils customAuthorityUtils;
 
-    public SecurityConfiguration(JwtTokenizer jwtTokenizer) {
+    public SecurityConfiguration(JwtTokenizer jwtTokenizer, CustomAuthorityUtils customAuthorityUtils) {
         this.jwtTokenizer = jwtTokenizer;
+        this.customAuthorityUtils = customAuthorityUtils;
     }
 
     @Bean
@@ -41,10 +48,23 @@ public class SecurityConfiguration {
                 .and()
                 .formLogin().disable()
                 .httpBasic().disable()
+                .exceptionHandling()
+                .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
+                .accessDeniedHandler(new CustomAccessDeniedHandler())
+                .and()
                 .apply(new CustomFilterConfigurer())
                 .and()
                 .authorizeHttpRequests(authorize -> authorize
-                        .anyRequest().permitAll()
+                        .antMatchers("/h2/**").permitAll()
+                        .antMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                        .antMatchers(HttpMethod.POST, "/members").permitAll()
+                        .antMatchers("/members/**").hasRole("USER")
+                        .antMatchers(HttpMethod.GET, "/postings/**").permitAll()
+                        .antMatchers("/postings/**").hasRole("USER")
+                        .antMatchers("/comments/**").hasRole("USER")
+                        .antMatchers("/tags").permitAll()
+                        .antMatchers("/postingLikes").hasRole("USER")
+                        .anyRequest().authenticated()
                 );
 
         return http.build();
@@ -63,7 +83,11 @@ public class SecurityConfiguration {
             jwtAuthenticationFilter.setAuthenticationSuccessHandler(new CustomAuthenticationSuccessHandler());
             jwtAuthenticationFilter.setAuthenticationFailureHandler(new CustomAuthenticationFailureHandler());
 
-            builder.addFilter(jwtAuthenticationFilter);
+            JwtVerificationFilter jwtVerificationFilter
+                    = new JwtVerificationFilter(jwtTokenizer, customAuthorityUtils);
+
+            builder.addFilter(jwtAuthenticationFilter)
+                    .addFilterAfter(jwtVerificationFilter, JwtAuthenticationFilter.class);
         }
     }
 
