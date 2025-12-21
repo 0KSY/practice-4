@@ -1,5 +1,6 @@
 package com.solo.practice.member.controller;
 
+import com.solo.practice.auth.userDetailsService.CustomUserDetails;
 import com.solo.practice.dto.SingleResponseDto;
 import com.solo.practice.member.dto.MemberDto;
 import com.solo.practice.member.entity.Member;
@@ -8,6 +9,7 @@ import com.solo.practice.member.service.MemberService;
 import com.solo.practice.utils.UriCreator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,29 +41,28 @@ public class MemberController {
         return ResponseEntity.created(location).build();
     }
 
-    @PatchMapping("/{member-id}")
-    public ResponseEntity patchMember(@PathVariable("member-id") @Positive long memberId,
-                                      @RequestBody @Valid MemberDto.Patch memberPatchDto){
+    @PatchMapping
+    public ResponseEntity patchMember(@RequestBody @Valid MemberDto.Patch memberPatchDto,
+                                      @AuthenticationPrincipal CustomUserDetails customUserDetails){
 
-        memberPatchDto.setMemberId(memberId);
-
-        Member member = memberService.updateMember(mapper.memberPatchDtoToMember(memberPatchDto));
+        Member member = memberService.updateMember(mapper.memberPatchDtoToMember(memberPatchDto), customUserDetails);
 
         return new ResponseEntity(new SingleResponseDto<>(mapper.memberToMemberResponseDto(member)), HttpStatus.OK);
     }
 
-    @GetMapping("/{member-id}")
-    public ResponseEntity getMember(@PathVariable("member-id") @Positive long memberId){
+    @GetMapping
+    public ResponseEntity getMember(@AuthenticationPrincipal CustomUserDetails customUserDetails){
 
-        Member member = memberService.findMember(memberId);
+        Member member = memberService.findMember(customUserDetails);
 
         return new ResponseEntity(new SingleResponseDto<>(mapper.memberToMemberResponseDto(member)), HttpStatus.OK);
     }
 
-    @DeleteMapping("/{member-id}")
-    public ResponseEntity deleteMember(@PathVariable("member-id") @Positive long memberId){
+    @DeleteMapping
+    public ResponseEntity deleteMember(@RequestBody @Valid MemberDto.Password memberPasswordDto,
+                                       @AuthenticationPrincipal CustomUserDetails customUserDetails){
 
-        memberService.deleteMember(memberId);
+        memberService.deleteMember(memberPasswordDto.getPassword(), customUserDetails);
 
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
