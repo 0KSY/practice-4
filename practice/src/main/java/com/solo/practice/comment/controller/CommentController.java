@@ -1,5 +1,6 @@
 package com.solo.practice.comment.controller;
 
+import com.solo.practice.auth.userDetailsService.CustomUserDetails;
 import com.solo.practice.comment.dto.CommentDto;
 import com.solo.practice.comment.entity.Comment;
 import com.solo.practice.comment.mapper.CommentMapper;
@@ -8,6 +9,7 @@ import com.solo.practice.dto.SingleResponseDto;
 import com.solo.practice.utils.UriCreator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,9 +32,10 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity postComment(@RequestBody @Valid CommentDto.Post commentPostDto){
+    public ResponseEntity postComment(@RequestBody @Valid CommentDto.Post commentPostDto,
+                                      @AuthenticationPrincipal CustomUserDetails customUserDetails){
 
-        Comment comment = commentService.createComment(mapper.commentPostDtoToComment(commentPostDto));
+        Comment comment = commentService.createComment(mapper.commentPostDtoToComment(commentPostDto), customUserDetails);
 
         URI location = UriCreator.createUri(COMMENT_DEFAULT_URI, comment.getCommentId());
 
@@ -41,19 +44,21 @@ public class CommentController {
 
     @PatchMapping("/{comment-id}")
     public ResponseEntity patchComment(@PathVariable("comment-id") @Positive long commentId,
-                                       @RequestBody @Valid CommentDto.Patch commentPatchDto){
+                                       @RequestBody @Valid CommentDto.Patch commentPatchDto,
+                                       @AuthenticationPrincipal CustomUserDetails customUserDetails){
 
         commentPatchDto.setCommentId(commentId);
 
-        Comment comment = commentService.updateComment(mapper.commentPatchDtoToComment(commentPatchDto));
+        Comment comment = commentService.updateComment(mapper.commentPatchDtoToComment(commentPatchDto), customUserDetails);
 
         return new ResponseEntity(new SingleResponseDto<>(mapper.commentToCommentResponseDto(comment)), HttpStatus.OK);
     }
 
     @DeleteMapping("/{comment-id}")
-    public ResponseEntity deleteComment(@PathVariable("comment-id") @Positive long commentId){
+    public ResponseEntity deleteComment(@PathVariable("comment-id") @Positive long commentId,
+                                        @AuthenticationPrincipal CustomUserDetails customUserDetails){
 
-        commentService.deleteComment(commentId);
+        commentService.deleteComment(commentId, customUserDetails);
 
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }

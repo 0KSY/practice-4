@@ -1,5 +1,6 @@
 package com.solo.practice.posting.service;
 
+import com.solo.practice.auth.userDetailsService.CustomUserDetails;
 import com.solo.practice.exception.BusinessLogicException;
 import com.solo.practice.exception.ExceptionCode;
 import com.solo.practice.member.entity.Member;
@@ -48,9 +49,9 @@ public class PostingService {
         return findPosting;
     }
 
-    public Posting createPosting(Posting posting){
+    public Posting createPosting(Posting posting, CustomUserDetails customUserDetails){
 
-        Member findMember = memberService.findVerifiedMember(posting.getMember().getMemberId());
+        Member findMember = memberService.findVerifiedMember(customUserDetails.getMemberId());
         posting.setMember(findMember);
 
         if(!posting.getPostingTags().isEmpty()){
@@ -71,9 +72,11 @@ public class PostingService {
         return postingRepository.save(posting);
     }
 
-    public Posting updatePosting(Posting posting){
+    public Posting updatePosting(Posting posting, CustomUserDetails customUserDetails){
 
         Posting findPosting = findVerifiedPosting(posting.getPostingId());
+
+        memberService.checkMemberId(findPosting.getMember().getMemberId(), customUserDetails);
 
         Optional.ofNullable(posting.getTitle())
                 .ifPresent(title -> findPosting.setTitle(title));
@@ -121,9 +124,11 @@ public class PostingService {
         return postingRepository.findAll(PageRequest.of(page, size, Sort.by("postingId").descending()));
     }
 
-    public void deletePosting(long postingId){
+    public void deletePosting(long postingId, CustomUserDetails customUserDetails){
 
         Posting findPosting = findVerifiedPosting(postingId);
+
+        memberService.checkMemberId(findPosting.getMember().getMemberId(), customUserDetails);
 
         postingRepository.delete(findPosting);
     }
